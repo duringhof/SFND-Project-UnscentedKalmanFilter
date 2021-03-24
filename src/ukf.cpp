@@ -171,8 +171,7 @@ void UKF::PredictMeanAndCovariance() {
     // state difference
     VectorXd x_diff = Xsig_pred_.col(i) - x_;
     // angle normalization
-    while (x_diff(3)> M_PI) x_diff(3)-=2.*M_PI;
-    while (x_diff(3)<-M_PI) x_diff(3)+=2.*M_PI;
+    x_diff(3) = Normalize(x_diff(3));
 
     P_ = P_ + weights_(i) * x_diff * x_diff.transpose() ;
   }
@@ -247,8 +246,7 @@ void UKF::PredictRadarMeasurement(VectorXd &z_pred, MatrixXd &S,
     VectorXd z_diff = Zsig.col(i) - z_pred;
 
     // angle normalization
-    while (z_diff(1)> M_PI) z_diff(1)-=2.*M_PI;
-    while (z_diff(1)<-M_PI) z_diff(1)+=2.*M_PI;
+    z_diff(1) = Normalize(z_diff(1));
 
     S = S + weights_(i) * z_diff * z_diff.transpose();
   }
@@ -283,16 +281,14 @@ void UKF::UpdateState(MatrixXd &Zsig, VectorXd &z_pred, MatrixXd &S,
 
     // residual
     VectorXd z_diff = Zsig.col(i) - z_pred;
-    
+
     // angle normalization
-    while (z_diff(1)> M_PI) z_diff(1)-=2.*M_PI;
-    while (z_diff(1)<-M_PI) z_diff(1)+=2.*M_PI;
+    z_diff(1) = Normalize(z_diff(1));
 
     // state difference
     VectorXd x_diff = Xsig_pred_.col(i) - x_;
     // angle normalization
-    while (x_diff(3)> M_PI) x_diff(3)-=2.*M_PI;
-    while (x_diff(3)<-M_PI) x_diff(3)+=2.*M_PI;
+    x_diff(3) = Normalize(x_diff(3));
 
     Tc = Tc + weights_(i) * x_diff * z_diff.transpose();
   }
@@ -304,8 +300,7 @@ void UKF::UpdateState(MatrixXd &Zsig, VectorXd &z_pred, MatrixXd &S,
   VectorXd z_diff = z - z_pred;
 
   // angle normalization
-  while (z_diff(1)> M_PI) z_diff(1)-=2.*M_PI;
-  while (z_diff(1)<-M_PI) z_diff(1)+=2.*M_PI;
+  z_diff(1) = Normalize(z_diff(1));
 
   // update state mean and covariance matrix
   x_ = x_ + K * z_diff;
@@ -415,4 +410,13 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 
   UpdateState(Zsig_rad, z_pred_rad, S_rad, meas_package.raw_measurements_,
               MeasurementPackage::RADAR);
+}
+
+double UKF::Normalize(double angle) {
+
+  while (angle > M_PI)
+    angle -= 2. * M_PI;
+  while (angle < -M_PI)
+    angle += 2. * M_PI;
+  return angle;
 }
