@@ -4,43 +4,28 @@
 #include "Eigen/Dense"
 #include "measurement_package.h"
 
+using Eigen::MatrixXd;
+using Eigen::VectorXd;
+
 class UKF {
- public:
-  /**
-   * Constructor
-   */
+public:
+ 
   UKF();
 
-  /**
-   * Destructor
-   */
   virtual ~UKF();
 
-  /**
-   * ProcessMeasurement
-   * @param meas_package The latest measurement data of either radar or laser
-   */
   void ProcessMeasurement(MeasurementPackage meas_package);
-
-  /**
-   * Prediction Predicts sigma points, the state, and the state covariance
-   * matrix
-   * @param delta_t Time between k and k+1 in s
-   */
   void Prediction(double delta_t);
-
-  /**
-   * Updates the state and the state covariance matrix using a laser measurement
-   * @param meas_package The measurement at k+1
-   */
   void UpdateLidar(MeasurementPackage meas_package);
-
-  /**
-   * Updates the state and the state covariance matrix using a radar measurement
-   * @param meas_package The measurement at k+1
-   */
   void UpdateRadar(MeasurementPackage meas_package);
 
+  void GenerateAugmentedSigmaPoints(MatrixXd &Xsig_aug);
+  void SigmaPointPrediction(MatrixXd &Xsig_aug, double delta_t);
+  void PredictMeanAndCovariance();
+  void PredictRadarMeasurement(VectorXd &z_pred, MatrixXd &S, MatrixXd &Zsig);
+  void PredictLidarMeasurement(VectorXd &z_pred, MatrixXd &S, MatrixXd &Zsig);
+  void UpdateState(MatrixXd &Zsig, VectorXd &z_pred, MatrixXd &S, VectorXd &z,
+                   MeasurementPackage::SensorType sensor_type);
 
   // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
@@ -52,13 +37,13 @@ class UKF {
   bool use_radar_;
 
   // state vector: [pos1 pos2 vel_abs yaw_angle yaw_rate] in SI units and rad
-  Eigen::VectorXd x_;
+  VectorXd x_;
 
   // state covariance matrix
-  Eigen::MatrixXd P_;
+  MatrixXd P_;
 
   // predicted sigma points matrix
-  Eigen::MatrixXd Xsig_pred_;
+  MatrixXd Xsig_pred_;
 
   // time when the state is true, in us
   long long time_us_;
@@ -82,10 +67,10 @@ class UKF {
   double std_radphi_;
 
   // Radar measurement noise standard deviation radius change in m/s
-  double std_radrd_ ;
+  double std_radrd_;
 
   // Weights of sigma points
-  Eigen::VectorXd weights_;
+  VectorXd weights_;
 
   // State dimension
   int n_x_;
@@ -95,6 +80,12 @@ class UKF {
 
   // Sigma point spreading parameter
   double lambda_;
+
+  // radar measurement dimension
+  int nrad_z_;
+
+  // laser measurement dimension
+  int nlas_z_;
 };
 
-#endif  // UKF_H
+#endif // UKF_H
